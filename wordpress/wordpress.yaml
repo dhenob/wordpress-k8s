@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: wordpress
+  name: wordpress
+  namespace: wordpress
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: wordpress
+        tier: frontend
+    spec:
+      containers:
+      - image: wordpress
+        name: wordpress
+        ports:
+        - containerPort: 80
+          name: wordpress
+        command: [ "/bin/sh"]
+        args: ["-c","export WORDPRESS_DB_HOST=$(cat /app-config/WORDPRESS_DB_HOST) && export WORDPRESS_DB_USER=$(cat /app-config/WORDPRESS_DB_USER) && export WORDPRESS_DB_PASSWORD=$(cat /app-config/WORDPRESS_DB_PASSWORD) && export WORDPRESS_DB_NAME=$(cat /app-config/WORDPRESS_DB_NAME) && docker-entrypoint.sh apache2-foreground"]
+        
+        # envFrom:
+        #   - configMapRef:
+        #       name: wp-config
+
+              
+        volumeMounts:
+        - name: wp-config
+          mountPath: /app-config
+        - name: wordpress-pvc
+          mountPath: /var/www/html
+      volumes:
+      - name: wp-config
+        configMap:
+          name: wp-config
+      - name: wordpress-pvc
+        persistentVolumeClaim:
+          claimName: wp-pvc

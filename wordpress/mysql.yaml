@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: mysql
+  name: mysql
+  namespace: wordpress
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+      tier: backend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: mysql
+        tier: backend
+    spec:
+      containers:
+      - image: mysql:5.7
+        name: mysql
+        # ports:
+        # - containerPort: 3306
+        #   name: mysql
+        command: [ "/bin/sh", "-c"]
+        args: ["export MYSQL_ROOT_PASSWORD=$(cat /my-config/MYSQL_ROOT_PASSWORD) && docker-entrypoint.sh mysqld"]
+        
+        volumeMounts:
+        - name: mysql-pvc
+          mountPath: /var/lib/mysql
+        - name: secret-config
+          mountPath: /my-config
+      volumes:
+        - name: mysql-pvc
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+        - name: secret-config
+          secret:
+            secretName: mysql-secret
